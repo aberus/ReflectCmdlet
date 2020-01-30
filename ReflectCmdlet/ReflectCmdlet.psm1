@@ -7,13 +7,27 @@ function Get-CommandSource {
          The Get-CommandSource cmdlet finds the source code/implementation for a cmdlet.
              
         .PARAMETER Name
-         Specifies the path or name of the command to retrieve the source code.
+         Specifies the path or name of the command to retrieve the source code. Accepts pipeline input.
 
         .PARAMETER Decompiler
-	     Specifies which decompiler or source will be used for browsing the source code.
+         Specifies which decompiler or source will be used for browsing the source code.
+
+        .INPUTS
+         System.Management.Automation.CommandInfo
+         System.String
+            You can pipe command names to this cmdlet.
+
+        .OUTPUTS
+         System.Management.Automation.PSObject
+
+        .Example
+         Get-CommandSource Write-Host
+
+        .Example
+         Get-Command Write-Host | Get-CommandSource -Decompiler ILSpy
 
         .LINK
-         https://www.github.com/aberus/ReflectCmdlet
+         https://github.com/aberus/ReflectCmdlet
     #>
 
     [CmdletBinding()]
@@ -34,14 +48,27 @@ function Get-CommandSource {
     }
 
     if($commandInfo -is [System.Management.Automation.FunctionInfo]) {
-        $modulePath = Split-Path -Path $commandInfo.Module.Path
-        Invoke-Item $modulePath
-
         $object = New-Object PSObject -Property @{
             Name = $commandInfo.Name
-            #Type       = $type
-            ModulePath   = $modulePath
         }
+
+        $functionPath = $commandInfo.ScriptBlock.File
+        if ($functionPath) {
+            $object | Add-Member -MemberType NoteProperty -Name Location -Value $functionPath
+            Invoke-Item $functionPath
+        }
+        else {
+            $modulePath = $commandInfo.Module.Path
+            if ($modulePath) {
+                $modulePath = Split-Path -Path $modulePath
+                $object | Add-Member -MemberType NoteProperty -Name Location -Value $modulePath
+                Invoke-Item $modulePath
+            }
+            else {
+                Write-Error "Unable to find this function's file or module location"
+            }
+        }
+
         return $object
     }
 
@@ -50,8 +77,8 @@ function Get-CommandSource {
         if(!$assembly) {
             $assembly = $commandInfo.DLL
         }
-
         $type = $commandInfo.ImplementingType.FullName
+
         if (($Decompiler -eq [Decompiler]::dnSpy -or !$Decompiler) -and (Get-Command dnSpy -ErrorAction SilentlyContinue)) {
             Start-Process -FilePath dnSpy -ArgumentList "$assembly --select T:$type"
         } elseif (($Decompiler -eq [Decompiler]::ILSpy -or !$Decompiler) -and (Get-Command ILSpy -ErrorAction SilentlyContinue)) {
@@ -72,13 +99,13 @@ function Get-CommandSource {
                 Start-Process -FilePath $url
             }       
         } else {
-            throw 'No decompiler is present in your path'
+            throw 'Unable to find decompiler in your path'
         }
 
         $object = New-Object PSObject -Property @{
-            Name = $commandInfo.Name
-            Type       = $type
-            Assembly   = $assembly
+            Name     = $commandInfo.Name
+            Type     = $type
+            Location = $assembly
         }
 
        return $object
