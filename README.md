@@ -1,11 +1,20 @@
 # ReflectCmdlet
 
+[![PowerShell Gallery Version](https://img.shields.io/powershellgallery/v/ReflectCmdlet)](https://www.powershellgallery.com/packages/ReflectCmdlet/)
+
 Sometime you want to understand how exactly PowerShell cmdlets work.
 The ```Get-CommandSource``` cmdlet or ```gcmso``` alias finds the source code/implementation for a cmdlet.
 
 This module is for Windows PowerShell 3.0 or above.
 
 ## How To Use
+
+``` PowerShell
+ Get-CommandSource 
+     [-Name] <String>
+     [-Decompiler {dnSpy | ILSpy | dotPeek | JustDecompile | Reflector | GitHub}]
+ ```
+
 It can be used in a many ways:
 
 ``` PowerShell
