@@ -37,6 +37,12 @@ To install the module you can run in a PowerShell following command:
 Install-Module -Name ReflectCmdlet
 ```
 
+To install the module using the PowerShellGet v3:
+
+```powershell
+Install-PSResource -Name ReflectCmdlet
+```
+
 Or download this module from PowerShell Gallery:
 https://www.powershellgallery.com/packages/ReflectCmdlet/
 
