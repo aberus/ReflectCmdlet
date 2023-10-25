@@ -80,15 +80,15 @@ function Get-CommandSource {
         $type = $commandInfo.ImplementingType.FullName
 
         if (($Decompiler -eq [Decompiler]::dnSpy -or !$Decompiler) -and (Get-Command dnSpy -ErrorAction Ignore)) {
-            Start-Process dnSpy -Args "`"$assembly`" --select T:$type"
+            Start-Process -FilePath dnSpy -ArgumentList "`"$assembly`" --select T:$type"
         } elseif (($Decompiler -eq [Decompiler]::ILSpy -or !$Decompiler) -and (Get-Command ILSpy -ErrorAction Ignore)) {
-            Start-Process ILSpy -Args "`"$assembly`" /navigateTo:T:$type"
+            Start-Process -FilePath ILSpy -ArgumentList "`"$assembly`" /navigateTo:T:$type"
         } elseif (($Decompiler -eq [Decompiler]::dotPeek -or !$Decompiler) -and (Get-Command dotPeek -ErrorAction Ignore)) {
-            dotPeek /select=$assembly!$type
+            Start-Process -FilePath dotPeek -ArgumentList /select=$assembly!$type
         } elseif (($Decompiler -eq [Decompiler]::JustDecompile -or !$Decompiler) -and (Get-Command JustDecompile -ErrorAction Ignore)) {
-            Start-Process JustDecompile -Args "/target:`"$assembly`""
+            Start-Process -FilePath JustDecompile -ArgumentList "/target:`"$assembly`""
         } elseif (($Decompiler -eq [Decompiler]::Reflector -or !$Decompiler) -and (Get-Command reflector -ErrorAction Ignore)) {
-            Start-Process reflector -Args "/select:$type `"$assembly`""
+            Start-Process -FilePath reflector -ArgumentList "/select:$type `"$assembly`""
         } elseif ($Decompiler -eq [Decompiler]::GitHub -or !$Decompiler) {
             $class = $commandInfo.ImplementingType.Name
             $uri = "https://api.github.com/search/code?q=`"class+${class}`"+in:file+repo:powershell/powershell"
@@ -96,7 +96,7 @@ function Get-CommandSource {
             $result = Invoke-RestMethod -Uri $uri -Method Get
             if ($result) {
                 $url = $result.items | Select-Object -ExpandProperty html_url
-                Start-Process $url
+                Start-Process -FilePath $url
             }       
         } else {
             throw 'Unable to find decompiler in your path'
