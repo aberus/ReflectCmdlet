@@ -34,7 +34,7 @@ function Get-CommandSource {
     [OutputType([PSObject])]
     [Alias('gcmso')]
     param(
-        [Parameter(Position = 0, Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
         [ValidateNotNullOrEmpty()]
         [String]$Name,
 
@@ -47,7 +47,8 @@ function Get-CommandSource {
         $commandInfo = $commandInfo.ResolvedCommand
     }
 
-    if ($commandInfo -is [System.Management.Automation.FunctionInfo]) {
+    if ($commandInfo -is [System.Management.Automation.FunctionInfo] -or
+        $commandInfo -is [System.Management.Automation.ExternalScriptInfo]) {
         $object = New-Object PSObject -Property $([ordered]@{
                 CommandType = $commandInfo.CommandType
                 Name        = $commandInfo.Name
@@ -83,7 +84,7 @@ function Get-CommandSource {
         $type = $commandInfo.ImplementingType.FullName
 
         if (($Decompiler -eq [Decompiler]::ILSpy -or !$Decompiler) -and (Get-Command ILSpy -ErrorAction Ignore)) {
-            Start-Process -FilePath ILSpy -ArgumentList "`"$assembly`" /navigateTo:T:$type"
+            Start-Process -FilePath ILSpy -ArgumentList "`"$assembly`" --navigateto:T:$type"
         }
         elseif (($Decompiler -eq [Decompiler]::dnSpy -or !$Decompiler) -and (Get-Command dnSpy -ErrorAction Ignore)) {
             Start-Process -FilePath dnSpy -ArgumentList "`"$assembly`" --select T:$type"
@@ -97,15 +98,14 @@ function Get-CommandSource {
         elseif (($Decompiler -eq [Decompiler]::Reflector -or !$Decompiler) -and (Get-Command reflector -ErrorAction Ignore)) {
             Start-Process -FilePath reflector -ArgumentList "/select:$type `"$assembly`""
         }
+        elseif (($Decompiler -eq [Decompiler]::CodemerxDecompile -or !$Decompiler) -and (Get-Command reflector -ErrorAction Ignore)) {
+            Start-Process -FilePath CodemerxDecompile -ArgumentList "/target:`"$assembly`""
+        }
         elseif ($Decompiler -eq [Decompiler]::GitHub -or !$Decompiler) {
             $class = $commandInfo.ImplementingType.Name
-            $uri = "https://api.github.com/search/code?q=`"class+${class}`"+in:file+repo:powershell/powershell"
-            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-            $result = Invoke-RestMethod -Uri $uri -Method Get
-            if ($result) {
-                $url = $result.items | Select-Object -ExpandProperty html_url
-                Start-Process -FilePath $url
-            }       
+            $query = "language:C# symbol:$class"         
+            $url = "https://github.com/search?q=" + [uri]::EscapeDataString($query) + "&type=code"
+            Start-Process -FilePath $url
         }
         else {
             throw 'Unable to find decompiler in your path'
@@ -124,10 +124,11 @@ function Get-CommandSource {
 }
 
 enum Decompiler {
-    dnSpy
-    ILSpy
+    CodemerxDecompile
     dotPeek
+    dnSpy
+    GitHub
+    ILSpy
     JustDecompile
     Reflector
-    GitHub
 }

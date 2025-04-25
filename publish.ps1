@@ -3,9 +3,11 @@ param(
     [string]$ApiKey
 )
 
-Install-Module -Name Microsoft.PowerShell.PSResourceGet
+Install-PSResource -Name Microsoft.PowerShell.PSResourceGet
 
 $modulePath = Join-Path $PSScriptRoot 'ReflectCmdlet'
+
+Write-Host "Publishing module at $modulePath to PSGallery"
 
 $publishOptions = @{
     Path       = $modulePath

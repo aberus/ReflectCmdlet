@@ -12,7 +12,7 @@ This module is for Windows PowerShell 3.0 or above.
 ``` PowerShell
  Get-CommandSource 
      [-Name] <String>
-     [-Decompiler {dnSpy | ILSpy | dotPeek | JustDecompile | Reflector | GitHub}]
+     [-Decompiler {CodemerxDecompile | dotPeek | dnSpy | GitHub | ILSpy | JustDecompile | Reflector}]
  ```
 
 It can be used in a many ways:
